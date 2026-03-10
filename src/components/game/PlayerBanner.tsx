@@ -12,7 +12,7 @@ export function PlayerBanner({ currentPlayer, macroOutcome }: PlayerBannerProps)
   if (macroOutcome !== null) return null;
 
   return (
-    <div className="flex items-center justify-center gap-3 mb-6">
+    <div className="flex items-center justify-center gap-3 mb-3">
       <span className="text-white/50 text-sm font-medium uppercase tracking-widest">Turn</span>
 
       <AnimatePresence mode="wait">

@@ -89,7 +89,6 @@ function ZoomedBoard({
                 onClick={() => {
                   if (isActive && !state.outcome && cellValue === null) {
                     onCellClick(boardIndex, cellIndex as BoardIndex);
-                    onClose();
                   }
                 }}
                 whileHover={
@@ -135,7 +134,7 @@ export function MacroBoard({
   onBoardUnfocus,
 }: MacroBoardProps) {
   return (
-    <div className="grid grid-cols-3 gap-3 w-full max-w-lg mx-auto" role="grid" aria-label="Extreme Noughts and Crosses">
+    <div className="grid grid-cols-3 gap-3 w-full max-w-[min(32rem,calc(100vh-15rem))] mx-auto" role="grid" aria-label="Extreme Noughts and Crosses">
       {macroBoard.map((miniBoard, index) => {
         const boardIndex = index as BoardIndex;
         const isFocused = focusedBoard === boardIndex;

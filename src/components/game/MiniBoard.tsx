@@ -55,7 +55,7 @@ export const MiniBoard = memo(function MiniBoard({
       aria-label={`Mini board ${boardIndex + 1}${isComplete ? `, won by ${state.outcome}` : isActive ? ', active' : ''}`}
     >
       {/* 3×3 grid */}
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-3 gap-1" onClick={(e) => e.stopPropagation()}>
         {state.cells.map((cellValue, cellIndex) => (
           <Cell
             key={cellIndex}
@@ -78,15 +78,26 @@ export const MiniBoard = memo(function MiniBoard({
         />
       )}
 
-      {/* Current player colour hint in active board */}
-      {isActive && !isComplete && (
+      {/* Expand / player indicator */}
+      {!isComplete && (
         <div
-          className="absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full"
-          style={{
-            backgroundColor: currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)',
-            boxShadow: `0 0 8px ${currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)'}`,
-          }}
-        />
+          className="absolute -top-2 -left-2 w-5 h-5 rounded-full flex items-center justify-center pointer-events-none"
+          style={
+            isActive
+              ? {
+                  backgroundColor: currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)',
+                  boxShadow: `0 0 8px ${currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)'}`,
+                }
+              : { backgroundColor: 'rgba(255,255,255,0.15)' }
+          }
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </svg>
+        </div>
       )}
     </motion.div>
   );

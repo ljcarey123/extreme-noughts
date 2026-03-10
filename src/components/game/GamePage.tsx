@@ -14,8 +14,6 @@ export function GamePage() {
 
   const handleCellClick = (macroCellIndex: BoardIndex, miniCellIndex: BoardIndex) => {
     playCell(macroCellIndex, miniCellIndex);
-    // Auto-close zoom after playing
-    unfocusBoard();
   };
 
   const handleBoardFocus = (boardIndex: BoardIndex) => {
@@ -27,7 +25,7 @@ export function GamePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-neutral-950">
+    <div className="h-screen flex flex-col items-center justify-center px-4 py-4 bg-neutral-950">
       {/* Title */}
       <motion.h1
         className="text-3xl font-black tracking-tight text-white mb-1"
@@ -42,7 +40,7 @@ export function GamePage() {
       </motion.h1>
 
       <motion.p
-        className="text-white/30 text-xs uppercase tracking-widest mb-8"
+        className="text-white/30 text-xs uppercase tracking-widest mb-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -61,7 +59,7 @@ export function GamePage() {
         {state.activeBoard !== null && state.macroOutcome === null && (
           <motion.p
             key={state.activeBoard}
-            className="text-white/40 text-xs mb-4 text-center"
+            className="text-white/40 text-xs mb-2 text-center"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
@@ -71,7 +69,7 @@ export function GamePage() {
         )}
         {state.activeBoard === null && state.macroOutcome === null && (
           <motion.p
-            className="text-white/40 text-xs mb-4"
+            className="text-white/40 text-xs mb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
