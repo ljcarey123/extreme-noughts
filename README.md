@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Extreme Noughts & Crosses
 
-## Getting Started
+Ultimate Tic-Tac-Toe for two players on the same device. A 3×3 grid of mini tic-tac-toe boards — win three mini boards in a row to win the game.
 
-First, run the development server:
+## Rules
+
+- The board is a 3×3 grid of 9 mini tic-tac-toe boards (81 cells total)
+- Your move sends your opponent to the mini board matching the cell you played in
+- If that board is already won or drawn, your opponent can play anywhere
+- Win three mini boards in a row (horizontally, vertically, or diagonally) to win
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev        # start dev server at localhost:3000
+npm run build      # typecheck + lint + production build
+npm test           # unit and component tests (vitest)
+npm run test:e2e   # end-to-end tests (playwright)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 15 · TypeScript · Tailwind CSS · Framer Motion
+- Vitest + React Testing Library · Playwright
