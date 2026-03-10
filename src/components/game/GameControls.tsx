@@ -11,7 +11,7 @@ interface GameControlsProps {
 export function GameControls({ onReset, onUndo, canUndo }: GameControlsProps) {
   return (
     <motion.div
-      className="flex gap-3 mt-6 justify-center"
+      className="flex gap-3 mt-3 justify-center"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}

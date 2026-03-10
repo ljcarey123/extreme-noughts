@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR Review</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #21262d;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --high: #f85149;
+      --high-bg: rgba(248,81,73,0.12);
+      --medium: #d29922;
+      --medium-bg: rgba(210,153,34,0.12);
+      --low: #3fb950;
+      --low-bg: rgba(63,185,80,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+    }
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .branch-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .branch-pill {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-family: 'Courier New', monospace;
+      color: var(--accent);
+      font-size: 12px;
+    }
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px 28px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      align-items: center;
+    }
+    .stat { display: flex; flex-direction: column; }
+    .stat-risk { margin-left: auto; }
+    .stat-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 2px; }
+    .added { color: #3fb950; }
+    .removed { color: #f85149; }
+    @media (max-width: 600px) {
+      .header { padding: 16px; }
+      .stat-risk { margin-left: 0; }
+    }
+
+    /* ── Risk badges ── */
+    .risk {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .risk.high   { color: var(--high);   background: var(--high-bg);   border: 1px solid rgba(248,81,73,0.35); }
+    .risk.medium { color: var(--medium); background: var(--medium-bg); border: 1px solid rgba(210,153,34,0.35); }
+    .risk.low    { color: var(--low);    background: var(--low-bg);    border: 1px solid rgba(63,185,80,0.35); }
+
+    /* ── Type badges ── */
+    .type-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .type-badge.added    { color: #3fb950; background: rgba(63,185,80,0.15); }
+    .type-badge.modified { color: #79c0ff; background: rgba(121,192,255,0.15); }
+    .type-badge.deleted  { color: #f85149; background: rgba(248,81,73,0.15); }
+    .type-badge.renamed  { color: #d29922; background: rgba(210,153,34,0.15); }
+
+    /* ── Nav ── */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 2px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav a {
+      padding: 11px 14px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .nav a:first-child { padding-left: 28px; }
+    .nav a:last-child  { padding-right: 28px; }
+    .nav a:hover { color: var(--text); }
+    .nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* ── Main ── */
+    .main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .count { background: var(--surface-2); border-radius: 12px; padding: 2px 8px; font-size: 12px; color: var(--text-muted); }
+    .empty { color: var(--text-muted); font-size: 13px; font-style: italic; }
+
+    /* ── Summary card ── */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ── Change cards ── */
+    .change-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .change-card:hover { border-color: #484f58; }
+    .change-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .change-file {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .change-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      flex: 2;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .line-stats { font-size: 12px; font-family: monospace; white-space: nowrap; }
+    .chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.15s; flex-shrink: 0; }
+    .change-card.open .chevron { transform: rotate(90deg); }
+    .change-body {
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      display: none;
+    }
+    .change-card.open .change-body { display: block; }
+    .risk-reason { color: var(--text-muted); font-size: 13px; margin-bottom: 10px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tag {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Diff viewer ── */
+    .diff-wrap { margin-top: 10px; }
+    .diff-mode-bar {
+      display: flex;
+      padding: 6px 8px;
+      background: #0a0d10;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+    }
+    .diff-mode-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 10px;
+      cursor: pointer;
+    }
+    .diff-mode-btn:first-child { border-radius: 4px 0 0 4px; }
+    .diff-mode-btn:last-child  { border-radius: 0 4px 4px 0; border-left: none; }
+    .diff-mode-btn.active { background: var(--surface-2); color: var(--text); }
+    .diff {
+      background: #0a0d10;
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .diff-table { width: 100%; border-collapse: collapse; }
+    .diff-table td { padding: 1px 8px; vertical-align: top; white-space: pre; }
+    .ln {
+      width: 42px;
+      color: var(--text-muted);
+      text-align: right;
+      padding-right: 8px;
+      user-select: none;
+      border-right: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .ln-rem { background: rgba(248,81,73,0.06); }
+    .ln-add { background: rgba(63,185,80,0.06); }
+    .dl.add { color: #3fb950; background: rgba(63,185,80,0.1); }
+    .dl.rem { color: #f85149; background: rgba(248,81,73,0.1); }
+    .dl.ctx { color: #8b949e; }
+    .dl.hdr { color: #79c0ff; }
+    .diff-more-btn {
+      display: block;
+      margin: 4px 6px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    .diff-more-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Components ── */
+    .comp-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 6px;
+      display: grid;
+      grid-template-columns: 180px 1fr auto;
+      gap: 16px;
+      align-items: start;
+    }
+    .comp-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .comp-desc { color: var(--text-muted); font-size: 13px; margin-bottom: 8px; }
+    .comp-files { font-family: monospace; font-size: 12px; color: var(--text-muted); }
+    .comp-file { display: block; padding: 1px 0; }
+
+    /* ── Test coverage ── */
+    .coverage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .coverage-score {
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+    }
+    .coverage-score.high   { color: var(--low); }
+    .coverage-score.medium { color: var(--medium); }
+    .coverage-score.low    { color: var(--high); }
+    .coverage-score.none   { color: var(--high); }
+    .file-list { margin-top: 14px; }
+    .file-list-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    .cov-file { font-family: monospace; font-size: 12px; display: block; padding: 2px 0; }
+    .cov-file.fail { color: #f85149; }
+    .cov-file.pass { color: #3fb950; }
+
+    /* ── Commits ── */
+    .commit-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+    .commit-hash { font-family: monospace; font-size: 12px; color: var(--accent); width: 56px; flex-shrink: 0; }
+    .commit-msg  { flex: 1; font-size: 13px; }
+    .commit-meta { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const DATA = {"meta":{"branch":"ui-improvements","target":"master","generated_at":"2026-03-10T17:15:01.864Z","commit_count":2,"files_changed":8,"insertions":677,"deletions":22},"summary":"This PR polishes the game UI with tighter vertical spacing, a smarter responsive board constraint, and improved zoom UX — the auto-close-on-play behaviour is removed so players can inspect a board after moving. Mini-board corner indicators are upgraded from an active-only coloured dot to a universal expand icon visible on all incomplete boards. Risk is low: all changes are presentational or interaction-flow tweaks with no logic, data, or API surface changes.","overall_risk":"low","major_changes":[{"file":"src/components/game/MiniBoard.tsx","description":"Corner indicator replaced with an expand/collapse SVG icon shown on all incomplete boards (coloured when active, translucent when not); added stopPropagation on grid click to prevent event bubbling","type":"modified","risk":"low","risk_reason":"Visual-only change with a defensive stopPropagation; no game logic affected.","components":["MiniBoard","Game UI"],"lines_added":26,"lines_removed":10,"diff_snippet":"diff --git a/src/components/game/MiniBoard.tsx b/src/components/game/MiniBoard.tsx\nindex c118d28..901cba5 100644\n--- a/src/components/game/MiniBoard.tsx\n+++ b/src/components/game/MiniBoard.tsx\n@@ -55,7 +55,7 @@ export const MiniBoard = memo(function MiniBoard({\n       aria-label={`Mini board ${boardIndex + 1}${isComplete ? `, won by ${state.outcome}` : isActive ? ', active' : ''}`}\n     >\n       {/* 3×3 grid */}\n-      <div className=\"grid grid-cols-3 gap-1\">\n+      <div className=\"grid grid-cols-3 gap-1\" onClick={(e) => e.stopPropagation()}>\n         {state.cells.map((cellValue, cellIndex) => (\n           <Cell\n             key={cellIndex}\n@@ -78,15 +78,26 @@ export const MiniBoard = memo(function MiniBoard({\n         />\n       )}\n \n-      {/* Current player colour hint in active board */}\n-      {isActive && !isComplete && (\n+      {/* Expand / player indicator */}\n+      {!isComplete && (\n         <div\n-          className=\"absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full\"\n-          style={{\n-            backgroundColor: currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)',\n-            boxShadow: `0 0 8px ${currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)'}`,\n-          }}\n-        />\n+          className=\"absolute -top-2 -left-2 w-5 h-5 rounded-full flex items-center justify-center pointer-events-none\"\n+          style={\n+            isActive\n+              ? {\n+                  backgroundColor: currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)',\n+                  boxShadow: `0 0 8px ${currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-o)'}`,\n+                }\n+              : { backgroundColor: 'rgba(255,255,255,0.15)' }\n+          }\n+        >\n+          <svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" strokeWidth=\"2.5\">\n+            <polyline points=\"15 3 21 3 21 9\" />\n+            <polyline points=\"9 21 3 21 3 15\" />\n+            <line x1=\"21\" y1=\"3\" x2=\"14\" y2=\"10\" />\n+            <line x1=\"3\" y1=\"21\" x2=\"10\" y2=\"14\" />\n+          </svg>\n+        </div>\n       )}\n     </motion.div>\n   );"},{"file":"src/components/game/GamePage.tsx","description":"Removed auto-unfocus (unfocusBoard) after a cell is played; layout switched from min-h-screen to h-screen; multiple margin reductions for tighter vertical rhythm","type":"modified","risk":"low","risk_reason":"Removing auto-unfocus changes interaction flow but is intentional UX — no risk to game state correctness.","components":["GamePage","Game UX"],"lines_added":4,"lines_removed":8,"diff_snippet":"diff --git a/src/components/game/GamePage.tsx b/src/components/game/GamePage.tsx\nindex fe12cf2..aa61555 100644\n--- a/src/components/game/GamePage.tsx\n+++ b/src/components/game/GamePage.tsx\n@@ -14,8 +14,6 @@ export function GamePage() {\n \n   const handleCellClick = (macroCellIndex: BoardIndex, miniCellIndex: BoardIndex) => {\n     playCell(macroCellIndex, miniCellIndex);\n-    // Auto-close zoom after playing\n-    unfocusBoard();\n   };\n \n   const handleBoardFocus = (boardIndex: BoardIndex) => {\n@@ -27,7 +25,7 @@ export function GamePage() {\n   };\n \n   return (\n-    <div className=\"min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-neutral-950\">\n+    <div className=\"h-screen flex flex-col items-center justify-center px-4 py-4 bg-neutral-950\">\n       {/* Title */}\n       <motion.h1\n         className=\"text-3xl font-black tracking-tight text-white mb-1\"\n@@ -42,7 +40,7 @@ export function GamePage() {\n       </motion.h1>\n \n       <motion.p\n-        className=\"text-white/30 text-xs uppercase tracking-widest mb-8\"\n+        className=\"text-white/30 text-xs uppercase tracking-widest mb-2\"\n         initial={{ opacity: 0 }}\n         animate={{ opacity: 1 }}\n         transition={{ delay: 0.2 }}\n@@ -61,7 +59,7 @@ export function GamePage() {\n         {state.activeBoard !== null && state.macroOutcome === null && (\n           <motion.p\n             key={state.activeBoard}\n-            className=\"text-white/40 text-xs mb-4 text-center\"\n+            className=\"text-white/40 text-xs mb-2 text-center\"\n             initial={{ opacity: 0, y: -6 }}\n             animate={{ opacity: 1, y: 0 }}\n             exit={{ opacity: 0, y: 6 }}\n@@ -71,7 +69,7 @@ export function GamePage() {\n         )}\n         {state.activeBoard === null && state.macroOutcome === null && (\n           <motion.p\n-            className=\"text-white/40 text-xs mb-4\"\n+            className=\"text-white/40 text-xs mb-2\"\n             initial={{ opacity: 0 }}\n             animate={{ opacity: 1 }}\n             exit={{ opacity: 0 }}"},{"file":"src/components/game/MacroBoard.tsx","description":"Removed redundant onClose() call inside ZoomedBoard cell click handler; board max-width changed from max-w-lg to a responsive calc expression capping at viewport height minus chrome","type":"modified","risk":"low","risk_reason":"Removing onClose() in ZoomedBoard aligns with the GamePage change (no auto-dismiss); responsive max-width is purely layout.","components":["MacroBoard","Game UX"],"lines_added":1,"lines_removed":3,"diff_snippet":"diff --git a/src/components/game/MacroBoard.tsx b/src/components/game/MacroBoard.tsx\nindex 2d3102a..a40efa6 100644\n--- a/src/components/game/MacroBoard.tsx\n+++ b/src/components/game/MacroBoard.tsx\n@@ -89,7 +89,6 @@ function ZoomedBoard({\n                 onClick={() => {\n                   if (isActive && !state.outcome && cellValue === null) {\n                     onCellClick(boardIndex, cellIndex as BoardIndex);\n-                    onClose();\n                   }\n                 }}\n                 whileHover={\n@@ -135,7 +134,7 @@ export function MacroBoard({\n   onBoardUnfocus,\n }: MacroBoardProps) {\n   return (\n-    <div className=\"grid grid-cols-3 gap-3 w-full max-w-lg mx-auto\" role=\"grid\" aria-label=\"Extreme Noughts and Crosses\">\n+    <div className=\"grid grid-cols-3 gap-3 w-full max-w-[min(32rem,calc(100vh-15rem))] mx-auto\" role=\"grid\" aria-label=\"Extreme Noughts and Crosses\">"}],"minor_changes":[{"file":"src/components/game/GameControls.tsx","description":"Top margin reduced mt-6 → mt-3 for tighter spacing","type":"modified","risk":"low","risk_reason":"Single Tailwind class change; cosmetic only.","components":["GameControls"],"lines_added":1,"lines_removed":1,"diff_snippet":"diff --git a/src/components/game/GameControls.tsx b/src/components/game/GameControls.tsx\nindex 66c5db9..605839b 100644\n--- a/src/components/game/GameControls.tsx\n+++ b/src/components/game/GameControls.tsx\n@@ -11,7 +11,7 @@ interface GameControlsProps {\n export function GameControls({ onReset, onUndo, canUndo }: GameControlsProps) {\n   return (\n     <motion.div\n-      className=\"flex gap-3 mt-6 justify-center\"\n+      className=\"flex gap-3 mt-3 justify-center\"\n       initial={{ opacity: 0, y: 12 }}\n       animate={{ opacity: 1, y: 0 }}\n       transition={{ delay: 0.3 }}"},{"file":"src/components/game/PlayerBanner.tsx","description":"Bottom margin reduced mb-6 → mb-3 for tighter spacing","type":"modified","risk":"low","risk_reason":"Single Tailwind class change; cosmetic only.","components":["PlayerBanner"],"lines_added":1,"lines_removed":1,"diff_snippet":"diff --git a/src/components/game/PlayerBanner.tsx b/src/components/game/PlayerBanner.tsx\nindex bad8c78..1327ff8 100644\n--- a/src/components/game/PlayerBanner.tsx\n+++ b/src/components/game/PlayerBanner.tsx\n@@ -12,7 +12,7 @@ export function PlayerBanner({ currentPlayer, macroOutcome }: PlayerBannerProps)\n   if (macroOutcome !== null) return null;\n \n   return (\n-    <div className=\"flex items-center justify-center gap-3 mb-6\">\n+    <div className=\"flex items-center justify-center gap-3 mb-3\">"},{"file":"package.json","description":"Version bump 0.1.0 → 0.1.1","type":"modified","risk":"low","risk_reason":"Patch version bump only.","components":["Project Config"],"lines_added":1,"lines_removed":1,"diff_snippet":"diff --git a/package.json b/package.json\nindex 288ddb6..d6ab6a2 100644\n--- a/package.json\n+++ b/package.json\n@@ -1,6 +1,6 @@\n {\n   \"name\": \"extreme-noughts\",\n-  \"version\": \"0.1.0\",\n+  \"version\": \"0.1.1\","},{"file":"package-lock.json","description":"Lockfile updated to reflect version bump","type":"modified","risk":"low","risk_reason":"Auto-generated lockfile change; no dependency changes.","components":["Project Config"],"lines_added":2,"lines_removed":2,"diff_snippet":"diff --git a/package-lock.json b/package-lock.json\nindex f4fb5d5..e61cf80 100644\n--- a/package-lock.json\n+++ b/package-lock.json\n@@ -1,12 +1,12 @@\n {\n   \"name\": \"extreme-noughts\",\n-  \"version\": \"0.1.0\",\n+  \"version\": \"0.1.1\","},{"file":".pr/index.html","description":"Previous PR review report artifact added (auto-generated HTML)","type":"added","risk":"low","risk_reason":"Generated file; not part of application runtime.","components":["Dev Tooling"],"lines_added":647,"lines_removed":0,"diff_snippet":""}],"impacted_components":[{"name":"Game UI Layout","files":["src/components/game/GamePage.tsx","src/components/game/GameControls.tsx","src/components/game/PlayerBanner.tsx"],"risk":"low","description":"Full-screen constraint (h-screen) and reduced vertical margins tighten the game layout, keeping all elements visible without scrolling."},{"name":"Zoom / Focus UX","files":["src/components/game/GamePage.tsx","src/components/game/MacroBoard.tsx"],"risk":"low","description":"Auto-close on play removed from both GamePage and ZoomedBoard — players stay in zoomed view after making a move, allowing board inspection."},{"name":"MiniBoard Indicator","files":["src/components/game/MiniBoard.tsx"],"risk":"low","description":"Universal expand SVG icon replaces the active-only coloured dot, visually communicating zoomability on all incomplete boards regardless of active state."}],"test_coverage":{"assessment":"none","test_files_changed":[],"untested_files":["src/components/game/MiniBoard.tsx","src/components/game/MacroBoard.tsx","src/components/game/GamePage.tsx"],"notes":"No test files were modified. The changes are visual and interaction-flow tweaks that would ideally be covered by snapshot or E2E tests, but the low risk scope (no logic changes) limits concern."},"commits":[{"hash":"8b5e817","message":"feat: improve UI layout, zoom UX, and board interactions","author":"linus","date":"2026-03-10"},{"hash":"e4621c5","message":"chore: add PR review report","author":"linus","date":"2026-03-10"}]};
+
+const h = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function riskBadge(r) {
+  if (!r || !['high','medium','low'].includes(r)) return '';
+  const icons = { high: '⚠', medium: '~', low: '✓' };
+  const labels = { high: 'HIGH', medium: 'MED', low: 'LOW' };
+  return `<span class="risk ${r}">${icons[r]} ${labels[r]}</span>`;
+}
+
+function typeBadge(t) {
+  if (!t) return '';
+  return `<span class="type-badge ${t}">${h(t)}</span>`;
+}
+
+var DIFF_SNIPPETS = {};
+
+function parseDiffLines(snippet) {
+  var rows = [], ll = 0, rl = 0;
+  snippet.split('\n').forEach(function(line) {
+    if (!line) return;
+    if (/^(diff |index |--- |\+\+\+ )/.test(line)) { rows.push({t:'hdr', text:line}); return; }
+    if (line.charAt(0) === '@') {
+      var m = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+      if (m) { ll = +m[1]; rl = +m[2]; }
+      rows.push({t:'hunk', text:line}); return;
+    }
+    if (line.charAt(0) === '-') { rows.push({t:'rem', ll:ll++, text:line.slice(1)}); return; }
+    if (line.charAt(0) === '+') { rows.push({t:'add', rl:rl++, text:line.slice(1)}); return; }
+    rows.push({t:'ctx', ll:ll++, rl:rl++, text:line.charAt(0)===' '?line.slice(1):line});
+  });
+  return rows;
+}
+
+function pairRows(rows) {
+  var out = [], i = 0;
+  while (i < rows.length) {
+    var r = rows[i];
+    if (r.t !== 'rem' && r.t !== 'add') { out.push(r); i++; continue; }
+    var rems = [], adds = [];
+    while (i < rows.length && (rows[i].t === 'rem' || rows[i].t === 'add')) {
+      if (rows[i].t === 'rem') rems.push(rows[i]); else adds.push(rows[i]);
+      i++;
+    }
+    var n = Math.max(rems.length, adds.length);
+    for (var j = 0; j < n; j++) out.push({t:'change', rem:rems[j]||null, add:adds[j]||null});
+  }
+  return out;
+}
+
+function foldTable(rows, renderRow, cardId, colspan) {
+  var FOLD = 60;
+  var vis = rows.slice(0, FOLD).map(renderRow).join('');
+  var out = '<table class="diff-table">' + vis;
+  if (rows.length > FOLD) {
+    var hid = rows.slice(FOLD).map(renderRow).join('');
+    var more = rows.length - FOLD;
+    out += '<tbody id="' + cardId + '-more" style="display:none">' + hid + '</tbody>';
+    out += '<tr><td colspan="' + colspan + '"><button id="' + cardId + '-btn" class="diff-more-btn" onclick="toggleDiff(\'' + cardId + '\',' + more + ')">&#9660; Show ' + more + ' more rows</button></td></tr>';
+  }
+  return out + '</table>';
+}
+
+function renderUnifiedView(snippet, cardId) {
+  var rows = parseDiffLines(snippet);
+  var renderRow = function(r) {
+    if (r.t === 'hdr' || r.t === 'hunk')
+      return '<tr><td colspan="3" class="dl hdr">' + h(r.text) + '</td></tr>';
+    if (r.t === 'ctx')
+      return '<tr><td class="ln">' + r.ll + '</td><td class="ln">' + r.rl + '</td><td class="dl ctx"> ' + h(r.text) + '</td></tr>';
+    if (r.t === 'rem')
+      return '<tr><td class="ln ln-rem">' + r.ll + '</td><td class="ln"></td><td class="dl rem">-' + h(r.text) + '</td></tr>';
+    return '<tr><td class="ln"></td><td class="ln ln-add">' + r.rl + '</td><td class="dl add">+' + h(r.text) + '</td></tr>';
+  };
+  return foldTable(rows, renderRow, cardId, 3);
+}
+
+function renderSplitView(snippet, cardId) {
+  var rows = pairRows(parseDiffLines(snippet));
+  var renderRow = function(r) {
+    if (r.t === 'hdr' || r.t === 'hunk')
+      return '<tr><td colspan="4" class="dl hdr">' + h(r.text) + '</td></tr>';
+    if (r.t === 'ctx')
+      return '<tr><td class="ln">' + r.ll + '</td><td class="dl ctx">' + h(r.text) + '</td><td class="ln">' + r.rl + '</td><td class="dl ctx">' + h(r.text) + '</td></tr>';
+    var rem = r.rem, add = r.add;
+    return '<tr>' +
+      '<td class="ln ln-rem">' + (rem ? rem.ll : '') + '</td>' +
+      '<td class="dl rem">' + (rem ? h(rem.text) : '') + '</td>' +
+      '<td class="ln ln-add">' + (add ? add.rl : '') + '</td>' +
+      '<td class="dl add">' + (add ? h(add.text) : '') + '</td>' +
+      '</tr>';
+  };
+  return foldTable(rows, renderRow, cardId, 4);
+}
+
+function renderDiff(snippet, cardId) {
+  if (!snippet) return '';
+  DIFF_SNIPPETS[cardId] = snippet;
+  return '<div class="diff-wrap">' +
+    '<div class="diff-mode-bar">' +
+      '<button class="diff-mode-btn active" onclick="setDiffMode(\'' + cardId + '\',\'unified\',this)">Unified</button>' +
+      '<button class="diff-mode-btn" onclick="setDiffMode(\'' + cardId + '\',\'split\',this)">Split</button>' +
+    '</div>' +
+    '<div id="' + cardId + '-diff" class="diff" data-mode="unified">' +
+      renderUnifiedView(snippet, cardId) +
+    '</div></div>';
+}
+
+function setDiffMode(cardId, mode, btn) {
+  var el = document.getElementById(cardId + '-diff');
+  if (!el || el.dataset.mode === mode) return;
+  el.dataset.mode = mode;
+  var snippet = DIFF_SNIPPETS[cardId] || '';
+  el.innerHTML = mode === 'split' ? renderSplitView(snippet, cardId) : renderUnifiedView(snippet, cardId);
+  var bar = btn.closest('.diff-mode-bar');
+  bar.querySelectorAll('.diff-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function changeCard(c, id) {
+  const diff = c.diff_snippet ? renderDiff(c.diff_snippet, id) : '';
+  const components = (c.components || []).map(t => `<span class="tag">${h(t)}</span>`).join('');
+  return `
+    <div class="change-card" id="cc-${id}">
+      <div class="change-header" onclick="toggle('cc-${id}')">
+        <span class="chevron">▶</span>
+        ${typeBadge(c.type)}
+        <span class="change-file" title="${h(c.file)}">${h(c.file)}</span>
+        <span class="change-desc" title="${h(c.description)}">${h(c.description)}</span>
+        <span class="line-stats"><span class="added">+${c.lines_added || 0}</span> <span class="removed">-${c.lines_removed || 0}</span></span>
+        ${riskBadge(c.risk)}
+      </div>
+      <div class="change-body">
+        ${c.risk_reason ? `<p class="risk-reason">⚠ ${h(c.risk_reason)}</p>` : ''}
+        ${components ? `<div class="tags">${components}</div>` : ''}
+        ${diff}
+      </div>
+    </div>`;
+}
+
+function render() {
+  const d = DATA;
+  d.impacted_components = d.impacted_components || d.components || [];
+  d.commits = d.commits || [];
+  const m = d.meta;
+  const genDate = new Date(m.generated_at).toLocaleString();
+
+  document.getElementById('root').innerHTML = `
+    <div class="header">
+      <h1>PR Review: ${h(m.branch)}</h1>
+      <div class="branch-row">
+        <span class="branch-pill">${h(m.branch)}</span>
+        <span>→</span>
+        <span class="branch-pill">${h(m.target)}</span>
+        <span style="margin-left:8px">Generated ${genDate}</span>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-value">${m.commit_count}</span>
+          <span class="stat-label">Commits</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${m.files_changed}</span>
+          <span class="stat-label">Files changed</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value added">+${m.insertions}</span>
+          <span class="stat-label">Insertions</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value removed">-${m.deletions}</span>
+          <span class="stat-label">Deletions</span>
+        </div>
+        <div class="stat stat-risk">
+          <span class="stat-value">${riskBadge(d.overall_risk)}</span>
+          <span class="stat-label">Overall risk</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#summary">Summary</a>
+      <a href="#major">Major (${d.major_changes.length})</a>
+      <a href="#minor">Minor (${d.minor_changes.length})</a>
+      <a href="#components">Components (${d.impacted_components.length})</a>
+      <a href="#coverage">Test coverage</a>
+      <a href="#commits">Commits (${d.commits.length})</a>
+    </nav>
+
+    <div class="main">
+
+      <section class="section" id="summary">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="summary-card">${h(d.summary)}</div>
+      </section>
+
+      <section class="section" id="major">
+        <h2 class="section-title">Major Changes <span class="count">${d.major_changes.length}</span></h2>
+        ${d.major_changes.length
+          ? d.major_changes.map((c, i) => changeCard(c, 'maj' + i)).join('')
+          : '<p class="empty">No major changes detected.</p>'}
+      </section>
+
+      <section class="section" id="minor">
+        <h2 class="section-title">Minor Changes <span class="count">${d.minor_changes.length}</span></h2>
+        ${d.minor_changes.length
+          ? d.minor_changes.map((c, i) => changeCard(c, 'min' + i)).join('')
+          : '<p class="empty">No minor changes detected.</p>'}
+      </section>
+
+      <section class="section" id="components">
+        <h2 class="section-title">Impacted Components <span class="count">${d.impacted_components.length}</span></h2>
+        ${d.impacted_components.map(comp => `
+          <div class="comp-card">
+            <div>
+              <div class="comp-name">${h(comp.name)}</div>
+              ${riskBadge(comp.risk)}
+            </div>
+            <div>
+              <p class="comp-desc">${h(comp.description)}</p>
+              <div class="comp-files">
+                ${(comp.files || []).map(f => `<span class="comp-file">${h(f)}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('') || '<p class="empty">No components identified.</p>'}
+      </section>
+
+      <section class="section" id="coverage">
+        <h2 class="section-title">Test Coverage</h2>
+        <div class="coverage-card">
+          <div class="coverage-score ${d.test_coverage.assessment}">${d.test_coverage.assessment} coverage</div>
+          <p style="color:var(--text-muted);font-size:13px">${h(d.test_coverage.notes)}</p>
+          ${d.test_coverage.untested_files?.length ? `
+            <div class="file-list">
+              <div class="file-list-label">Missing test coverage</div>
+              ${d.test_coverage.untested_files.map(f => `<span class="cov-file fail">✗ ${h(f)}</span>`).join('')}
+            </div>` : ''}
+          ${d.test_coverage.test_files_changed?.length ? `
+            <div class="file-list" style="margin-top:12px">
+              <div class="file-list-label">Test files modified</div>
+              ${d.test_coverage.test_files_changed.map(f => `<span class="cov-file pass">✓ ${h(f)}</span>`).join('')}
+            </div>` : ''}
+        </div>
+      </section>
+
+      <section class="section" id="commits">
+        <h2 class="section-title">Commits <span class="count">${d.commits.length}</span></h2>
+        ${d.commits.map(c => `
+          <div class="commit-item">
+            <span class="commit-hash">${h(String(c.hash).substring(0, 7))}</span>
+            <span class="commit-msg">${h(c.message)}</span>
+            <span class="commit-meta">${h(c.author)} · ${h(c.date)}</span>
+          </div>
+        `).join('')}
+      </section>
+
+    </div>
+  `;
+
+  // Highlight active nav link on scroll
+  const sections = ['summary','major','minor','components','coverage','commits'];
+  const navLinks = document.querySelectorAll('.nav a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`.nav a[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+}
+
+function toggle(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
+
+function toggleDiff(cardId, total) {
+  const more = document.getElementById(cardId + '-more');
+  const btn  = document.getElementById(cardId + '-btn');
+  if (!more || !btn) return;
+  const expanded = more.style.display !== 'none';
+  more.style.display = expanded ? 'none' : '';
+  btn.textContent = expanded ? '▼ Show ' + total + ' more rows' : '▲ Show less';
+}
+
+render();
+</script>
+</body>
+</html>
